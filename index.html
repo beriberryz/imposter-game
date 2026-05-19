@@ -84,6 +84,30 @@
       padding: 10px;
       border-radius: 10px;
       margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .small-btn {
+      background: #ef4444;
+      color: white;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      width: auto;
+    }
+
+    .small-btn:hover {
+      background: #f87171;
+    }
+
+    .danger {
+      background: #dc2626;
+      color: white;
     }
 
     .hint-box {
@@ -94,57 +118,58 @@
 </head>
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <div id="setup-screen">
-      <h1>🎭 Imposter Game</h1>
+  <div id="setup-screen">
+    <h1>🎭 Imposter Game</h1>
 
-      <h2>Add Custom Word</h2>
+    <h2>Add Custom Word</h2>
 
-      <input type="text" id="wordInput" placeholder="Enter secret word">
-      <input type="text" id="hintInput" placeholder="Enter hint for imposter">
+    <input type="text" id="wordInput" placeholder="Enter secret word">
+    <input type="text" id="hintInput" placeholder="Enter hint for imposter">
 
-      <button onclick="addWord()">Add Word</button>
+    <button onclick="addWord()">Add Word</button>
+    <button class="danger" onclick="resetWords()">Reset All Words</button>
 
-      <div id="wordList"></div>
+    <div id="wordList"></div>
 
-      <h2>Game Settings</h2>
-      <input type="number" id="playerCount" min="3" max="20" placeholder="Number of players">
+    <h2>Game Settings</h2>
+    <input type="number" id="playerCount" min="3" max="20" placeholder="Number of players">
 
-      <button onclick="startGame()">Start Game</button>
-    </div>
-
-    <div id="reveal-screen" class="hidden">
-      <h1>Player Reveal</h1>
-
-      <div class="card">
-        <h2 id="playerTurn"></h2>
-
-        <button id="showRoleBtn" onclick="showRole()">Show My Role</button>
-
-        <div id="roleDisplay" class="hidden">
-          <div id="roleText"></div>
-          <button onclick="nextPlayer()">Next Player</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="clue-screen" class="hidden">
-      <h1>🗣️ Clue Round</h1>
-      <div class="card">
-        <p>Players give clues about the word.</p>
-        <button onclick="showVoting()">Continue To Voting</button>
-      </div>
-    </div>
-
-    <div id="voting-screen" class="hidden">
-      <h1>🗳️ Voting</h1>
-      <div id="voteList"></div>
-      <div id="result"></div>
-      <button onclick="resetGame()">Play Again</button>
-    </div>
-
+    <button onclick="startGame()">Start Game</button>
   </div>
+
+  <div id="reveal-screen" class="hidden">
+    <h1>Player Reveal</h1>
+
+    <div class="card">
+      <h2 id="playerTurn"></h2>
+
+      <button id="showRoleBtn" onclick="showRole()">Show My Role</button>
+
+      <div id="roleDisplay" class="hidden">
+        <div id="roleText"></div>
+        <button onclick="nextPlayer()">Next Player</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="clue-screen" class="hidden">
+    <h1>🗣️ Clue Round</h1>
+    <div class="card">
+      <p>Players give clues about the word.</p>
+      <button onclick="showVoting()">Continue To Voting</button>
+    </div>
+  </div>
+
+  <div id="voting-screen" class="hidden">
+    <h1>🗳️ Voting</h1>
+    <div id="voteList"></div>
+    <div id="result"></div>
+    <button onclick="resetGame()">Play Again</button>
+  </div>
+
+</div>
 
 <script>
 
@@ -154,10 +179,7 @@ let currentPlayer = 0;
 let imposterIndex = 0;
 let selectedWord = null;
 
-// render saved words on load
-window.onload = () => {
-  renderWords();
-};
+window.onload = () => renderWords();
 
 function saveWords() {
   localStorage.setItem('imposterWords', JSON.stringify(customWords));
@@ -167,15 +189,10 @@ function addWord() {
   const word = document.getElementById('wordInput').value.trim();
   const hint = document.getElementById('hintInput').value.trim();
 
-  if (!word || !hint) {
-    alert('Please enter both word and hint.');
-    return;
-  }
+  if (!word || !hint) return alert('Enter word and hint');
 
-  const exists = customWords.some(w => w.word.toLowerCase() === word.toLowerCase());
-  if (exists) {
-    alert('This word already exists!');
-    return;
+  if (customWords.some(w => w.word.toLowerCase() === word.toLowerCase())) {
+    return alert('Word already exists');
   }
 
   customWords.push({ word, hint });
@@ -187,31 +204,47 @@ function addWord() {
   renderWords();
 }
 
+function deleteWord(index) {
+  customWords.splice(index, 1);
+  saveWords();
+  renderWords();
+}
+
+function resetWords() {
+  if (!confirm('Delete ALL words?')) return;
+  customWords = [];
+  saveWords();
+  renderWords();
+}
+
+// Words hidden except word label + delete button
 function renderWords() {
-  const wordList = document.getElementById('wordList');
-  wordList.innerHTML = `<div class="hint-box">✔ Words saved: ${customWords.length}</div>`;
+  const list = document.getElementById('wordList');
+
+  if (customWords.length === 0) {
+    list.innerHTML = '<div class="hint-box">No words added yet</div>';
+    return;
+  }
+
+  list.innerHTML = customWords.map((w, i) => `
+    <div class="player-item">
+      <span>Word: ${w.word}</span>
+      <button class="small-btn" onclick="deleteWord(${i})">Delete</button>
+    </div>
+  `).join('');
 }
 
 function startGame() {
   const count = parseInt(document.getElementById('playerCount').value);
 
-  if (customWords.length === 0) {
-    alert('Add at least one word.');
-    return;
-  }
+  if (!customWords.length) return alert('Add words first');
+  if (!count || count < 3) return alert('Min 3 players');
 
-  if (!count || count < 3) {
-    alert('Minimum 3 players required.');
-    return;
-  }
-
-  players = [];
-  for (let i = 1; i <= count; i++) {
-    players.push(`Player ${i}`);
-  }
+  players = Array.from({ length: count }, (_, i) => `Player ${i + 1}`);
 
   imposterIndex = Math.floor(Math.random() * count);
   selectedWord = customWords[Math.floor(Math.random() * customWords.length)];
+
   currentPlayer = 0;
 
   document.getElementById('setup-screen').classList.add('hidden');
@@ -221,7 +254,7 @@ function startGame() {
 }
 
 function updateRevealScreen() {
-  document.getElementById('playerTurn').innerText = `${players[currentPlayer]}, pass the device.`;
+  document.getElementById('playerTurn').innerText = `${players[currentPlayer]}, pass device`;
   document.getElementById('showRoleBtn').classList.remove('hidden');
   document.getElementById('roleDisplay').classList.add('hidden');
 }
@@ -232,7 +265,7 @@ function showRole() {
   if (currentPlayer === imposterIndex) {
     roleText.innerHTML = `😈 IMPOSTER<br><br>Hint: <b>${selectedWord.hint}</b>`;
   } else {
-    roleText.innerHTML = `Word:<br><b>${selectedWord.word}</b>`;
+    roleText.innerHTML = `Word: <b>${selectedWord.word}</b>`;
   }
 
   document.getElementById('showRoleBtn').classList.add('hidden');
@@ -255,24 +288,26 @@ function showVoting() {
   document.getElementById('clue-screen').classList.add('hidden');
   document.getElementById('voting-screen').classList.remove('hidden');
 
-  const voteList = document.getElementById('voteList');
-  voteList.innerHTML = '';
+  const list = document.getElementById('voteList');
+  list.innerHTML = '';
 
   players.forEach((p, i) => {
-    const div = document.createElement('div');
-    div.className = 'player-item';
-    div.innerHTML = `<b>${p}</b><br><button onclick="vote(${i})">Vote</button>`;
-    voteList.appendChild(div);
+    list.innerHTML += `
+      <div class="player-item">
+        <span>${p}</span>
+        <button class="small-btn" onclick="vote(${i})">Vote</button>
+      </div>
+    `;
   });
 }
 
-function vote(index) {
+function vote(i) {
   const result = document.getElementById('result');
 
-  if (index === imposterIndex) {
-    result.innerHTML = `✔ Correct! ${players[index]} was the imposter.<br>Word: ${selectedWord.word}`;
+  if (i === imposterIndex) {
+    result.innerHTML = `✔ Correct! ${players[i]} was imposter. Word: ${selectedWord.word}`;
   } else {
-    result.innerHTML = `❌ Wrong! ${players[imposterIndex]} was the imposter.<br>Word: ${selectedWord.word}`;
+    result.innerHTML = `❌ Wrong! ${players[imposterIndex]} was imposter. Word: ${selectedWord.word}`;
   }
 }
 
