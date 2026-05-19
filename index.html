@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imposter Game</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #111827;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background: #1f2937;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #facc15;
+    }
+
+    h2 {
+      margin-bottom: 15px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    input {
+      background: #374151;
+      color: white;
+    }
+
+    button {
+      background: #facc15;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #fde047;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .card {
+      background: #374151;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .player-item {
+      background: #4b5563;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .hint-box {
+      opacity: 0.85;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <div id="setup-screen">
+      <h1>🎭 Imposter Game</h1>
+
+      <h2>Add Custom Word</h2>
+
+      <input type="text" id="wordInput" placeholder="Enter secret word">
+      <input type="text" id="hintInput" placeholder="Enter hint for imposter">
+
+      <button onclick="addWord()">Add Word</button>
+
+      <div id="wordList"></div>
+
+      <h2>Game Settings</h2>
+      <input type="number" id="playerCount" min="3" max="20" placeholder="Number of players">
+
+      <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="reveal-screen" class="hidden">
+      <h1>Player Reveal</h1>
+
+      <div class="card">
+        <h2 id="playerTurn"></h2>
+
+        <button id="showRoleBtn" onclick="showRole()">Show My Role</button>
+
+        <div id="roleDisplay" class="hidden">
+          <div id="roleText"></div>
+          <button onclick="nextPlayer()">Next Player</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="clue-screen" class="hidden">
+      <h1>🗣️ Clue Round</h1>
+      <div class="card">
+        <p>Players give clues about the word.</p>
+        <button onclick="showVoting()">Continue To Voting</button>
+      </div>
+    </div>
+
+    <div id="voting-screen" class="hidden">
+      <h1>🗳️ Voting</h1>
+      <div id="voteList"></div>
+      <div id="result"></div>
+      <button onclick="resetGame()">Play Again</button>
+    </div>
+
+  </div>
+
+<script>
+
+let customWords = [];
+let players = [];
+let currentPlayer = 0;
+let imposterIndex = 0;
+let selectedWord = null;
+
+function addWord() {
+  const word = document.getElementById('wordInput').value.trim();
+  const hint = document.getElementById('hintInput').value.trim();
+
+  if (!word || !hint) {
+    alert('Please enter both word and hint.');
+    return;
+  }
+
+  // prevent duplicates (case-insensitive)
+  const exists = customWords.some(w => w.word.toLowerCase() === word.toLowerCase());
+  if (exists) {
+    alert('This word already exists!');
+    return;
+  }
+
+  customWords.push({ word, hint });
+
+  document.getElementById('wordInput').value = '';
+  document.getElementById('hintInput').value = '';
+
+  renderWords();
+}
+
+// Words are hidden for fairness
+function renderWords() {
+  const wordList = document.getElementById('wordList');
+  wordList.innerHTML = `<div class="hint-box">✔ Word added. Total words: ${customWords.length}</div>`;
+}
+
+function startGame() {
+  const count = parseInt(document.getElementById('playerCount').value);
+
+  if (customWords.length === 0) {
+    alert('Add at least one word.');
+    return;
+  }
+
+  if (!count || count < 3) {
+    alert('Minimum 3 players required.');
+    return;
+  }
+
+  players = [];
+  for (let i = 1; i <= count; i++) {
+    players.push(`Player ${i}`);
+  }
+
+  imposterIndex = Math.floor(Math.random() * count);
+
+  selectedWord = customWords[Math.floor(Math.random() * customWords.length)];
+
+  currentPlayer = 0;
+
+  document.getElementById('setup-screen').classList.add('hidden');
+  document.getElementById('reveal-screen').classList.remove('hidden');
+
+  updateRevealScreen();
+}
+
+function updateRevealScreen() {
+  document.getElementById('playerTurn').innerText = `${players[currentPlayer]}, pass the device.`;
+  document.getElementById('showRoleBtn').classList.remove('hidden');
+  document.getElementById('roleDisplay').classList.add('hidden');
+}
+
+function showRole() {
+  const roleText = document.getElementById('roleText');
+
+  if (currentPlayer === imposterIndex) {
+    roleText.innerHTML = `😈 IMPOSTER<br><br>Hint: <b>${selectedWord.hint}</b>`;
+  } else {
+    roleText.innerHTML = `Word:<br><b>${selectedWord.word}</b>`;
+  }
+
+  document.getElementById('showRoleBtn').classList.add('hidden');
+  document.getElementById('roleDisplay').classList.remove('hidden');
+}
+
+function nextPlayer() {
+  currentPlayer++;
+
+  if (currentPlayer >= players.length) {
+    document.getElementById('reveal-screen').classList.add('hidden');
+    document.getElementById('clue-screen').classList.remove('hidden');
+    return;
+  }
+
+  updateRevealScreen();
+}
+
+function showVoting() {
+  document.getElementById('clue-screen').classList.add('hidden');
+  document.getElementById('voting-screen').classList.remove('hidden');
+
+  const voteList = document.getElementById('voteList');
+  voteList.innerHTML = '';
+
+  players.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'player-item';
+    div.innerHTML = `<b>${p}</b><br><button onclick="vote(${i})">Vote</button>`;
+    voteList.appendChild(div);
+  });
+}
+
+function vote(index) {
+  const result = document.getElementById('result');
+
+  if (index === imposterIndex) {
+    result.innerHTML = `✔ Correct! ${players[index]} was the imposter.<br>Word: ${selectedWord.word}`;
+  } else {
+    result.innerHTML = `❌ Wrong! ${players[imposterIndex]} was the imposter.<br>Word: ${selectedWord.word}`;
+  }
+}
+
+function resetGame() {
+  location.reload();
+}
+
+</script>
+
+</body>
+</html>
