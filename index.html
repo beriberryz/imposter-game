@@ -87,15 +87,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
     }
 
     .small-btn {
       background: #ef4444;
       color: white;
       padding: 6px 10px;
-      border: none;
       border-radius: 8px;
+      border: none;
       cursor: pointer;
       font-size: 12px;
       width: auto;
@@ -105,13 +104,8 @@
       background: #f87171;
     }
 
-    .danger {
-      background: #dc2626;
-      color: white;
-    }
-
     .hint-box {
-      opacity: 0.85;
+      opacity: 0.8;
       font-size: 14px;
     }
   </style>
@@ -123,13 +117,13 @@
   <div id="setup-screen">
     <h1>🎭 Imposter Game</h1>
 
-    <h2>Add Custom Word</h2>
+    <h2>Add Words</h2>
 
     <input type="text" id="wordInput" placeholder="Enter secret word">
     <input type="text" id="hintInput" placeholder="Enter hint for imposter">
 
     <button onclick="addWord()">Add Word</button>
-    <button class="danger" onclick="resetWords()">Reset All Words</button>
+    <button onclick="resetWords()" style="background:#dc2626;color:white;">Reset All Words</button>
 
     <div id="wordList"></div>
 
@@ -217,21 +211,20 @@ function resetWords() {
   renderWords();
 }
 
-// Words hidden except word label + delete button
+// 🔒 Words are now fully hidden (no word display at all)
 function renderWords() {
   const list = document.getElementById('wordList');
 
   if (customWords.length === 0) {
-    list.innerHTML = '<div class="hint-box">No words added yet</div>';
+    list.innerHTML = '<div class="hint-box">No words added</div>';
     return;
   }
 
-  list.innerHTML = customWords.map((w, i) => `
-    <div class="player-item">
-      <span>Word: ${w.word}</span>
-      <button class="small-btn" onclick="deleteWord(${i})">Delete</button>
+  list.innerHTML = `
+    <div class="hint-box">
+      ✔ Words saved: ${customWords.length} (hidden for fairness)
     </div>
-  `).join('');
+  `;
 }
 
 function startGame() {
@@ -305,7 +298,7 @@ function vote(i) {
   const result = document.getElementById('result');
 
   if (i === imposterIndex) {
-    result.innerHTML = `✔ Correct! ${players[i]} was imposter. Word: ${selectedWord.word}`;
+    result.innerHTML = `✔ Correct! ${players[i]} was the imposter. Word: ${selectedWord.word}`;
   } else {
     result.innerHTML = `❌ Wrong! ${players[imposterIndex]} was imposter. Word: ${selectedWord.word}`;
   }
