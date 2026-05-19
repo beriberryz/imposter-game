@@ -148,11 +148,20 @@
 
 <script>
 
-let customWords = [];
+let customWords = JSON.parse(localStorage.getItem('imposterWords') || '[]');
 let players = [];
 let currentPlayer = 0;
 let imposterIndex = 0;
 let selectedWord = null;
+
+// render saved words on load
+window.onload = () => {
+  renderWords();
+};
+
+function saveWords() {
+  localStorage.setItem('imposterWords', JSON.stringify(customWords));
+}
 
 function addWord() {
   const word = document.getElementById('wordInput').value.trim();
@@ -163,7 +172,6 @@ function addWord() {
     return;
   }
 
-  // prevent duplicates (case-insensitive)
   const exists = customWords.some(w => w.word.toLowerCase() === word.toLowerCase());
   if (exists) {
     alert('This word already exists!');
@@ -171,6 +179,7 @@ function addWord() {
   }
 
   customWords.push({ word, hint });
+  saveWords();
 
   document.getElementById('wordInput').value = '';
   document.getElementById('hintInput').value = '';
@@ -178,10 +187,9 @@ function addWord() {
   renderWords();
 }
 
-// Words are hidden for fairness
 function renderWords() {
   const wordList = document.getElementById('wordList');
-  wordList.innerHTML = `<div class="hint-box">✔ Word added. Total words: ${customWords.length}</div>`;
+  wordList.innerHTML = `<div class="hint-box">✔ Words saved: ${customWords.length}</div>`;
 }
 
 function startGame() {
@@ -203,9 +211,7 @@ function startGame() {
   }
 
   imposterIndex = Math.floor(Math.random() * count);
-
   selectedWord = customWords[Math.floor(Math.random() * customWords.length)];
-
   currentPlayer = 0;
 
   document.getElementById('setup-screen').classList.add('hidden');
